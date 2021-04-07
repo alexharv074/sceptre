@@ -1,5 +1,4 @@
 import logging
-import sys
 from functools import partial, wraps
 
 import json
@@ -30,14 +29,14 @@ def catch_exceptions(func):
     def decorated(*args, **kwargs):
         """
         Invokes ``func``, catches expected errors, prints the error message and
-        exits sceptre with a non-zero exit code.
+        re-raises.
         """
         try:
             return func(*args, **kwargs)
         except (SceptreException, BotoCoreError, ClientError, Boto3Error,
                 TemplateError) as error:
             write(error)
-            sys.exit(1)
+            raise
 
     return decorated
 
