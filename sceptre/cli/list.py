@@ -1,4 +1,5 @@
 import click
+import urllib
 
 from sceptre.context import SceptreContext
 from sceptre.cli.helpers import (
@@ -93,16 +94,21 @@ def list_outputs(ctx, path, export):
 
 
 @list_group.command(name="change-sets")
+@click.option(
+    "-U", "--url", is_flag=True, help="Instead write a URL."
+)
 @click.argument("path")
 @click.pass_context
 @catch_exceptions
-def list_change_sets(ctx, path):
+def list_change_sets(ctx, path, url):
     """
     List change sets for stack.
     \f
 
     :param path: Path to execute the command on.
     :type path: str
+    :param url: Write out a console URL instead.
+    :type url: bool
     """
     context = SceptreContext(
         command_path=path,
@@ -119,5 +125,22 @@ def list_change_sets(ctx, path):
         in plan.list_change_sets().values() if response
     ]
 
-    for response in responses:
-        write(response, context.output_format)
+    for count, response in enumerate(responses):
+        if url:
+            ref = response[list(response.keys())[0]][0]
+            stack_name = ref["StackName"]
+            stack_id = ref["StackId"]
+            change_set_id = ref["ChangeSetId"]
+
+            print("\n{}) \
+https://ap-southeast-2.console.aws.amazon.com/cloudformation/home?\
+region=ap-southeast-2#/stacks/changesets/changes?{}\n".format(
+                count,
+                stack_name,
+                urllib.parse.urlencode({
+                    "stackId": stack_id,
+                    "changeSetId": change_set_id
+                })
+            ))
+        else:
+            write(response, context.output_format)
